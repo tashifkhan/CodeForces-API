@@ -5,8 +5,8 @@ from routes import user_routes, contest_routes
 from models.templates import html_template
 
 app = FastAPI(
-    title="Codeforces API",
-    description="A FastAPI wrapper for the Codeforces API",
+    title="Codeforces Stats API",
+    description="A FastAPI app for the Codeforces Stats",
     version="1.0.0",
 )
 
