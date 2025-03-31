@@ -90,36 +90,36 @@ async def root():
     """Root endpoint that provides basic API information."""
     return {"message": "Welcome to the Codeforces API wrapper. Visit /docs for documentation."}
 
-@app.get("/users/{handle}", response_model=UserAllStats, responses={404: {"model": ErrorResponse}})
-async def user_all_stats(handle: str = Path(..., description="Codeforces handle")):
+@app.get("/{userid}", response_model=UserAllStats, responses={404: {"model": ErrorResponse}})
+async def user_all_stats(userid: str = Path(..., description="Codeforces handle")):
     """
     Get comprehensive statistics for a Codeforces user.
     
     This includes profile info, contests participated, problems solved, and rating history.
     """
-    stats = get_user_all_stats(handle)
+    stats = get_user_all_stats(userid)
     if stats is None:
-        raise HTTPException(status_code=404, detail=f"Stats not found for {handle}")
+        raise HTTPException(status_code=404, detail=f"Stats not found for {userid}")
     return stats
 
-@app.get("/users/{handle}/basic", response_model=UserInfo, responses={404: {"model": ErrorResponse}})
-async def user_basic_info(handle: str = Path(..., description="Codeforces handle")):
+@app.get("/{userid}/basic", response_model=UserInfo, responses={404: {"model": ErrorResponse}})
+async def user_basic_info(userid: str = Path(..., description="Codeforces handle")):
     """Get basic information about a Codeforces user."""
-    user_info = get_user_info([handle])
+    user_info = get_user_info([userid])
     if not user_info:
-        raise HTTPException(status_code=404, detail=f"User information not found for {handle}")
+        raise HTTPException(status_code=404, detail=f"User information not found for {userid}")
     return user_info[0]
 
-@app.get("/users/multi/{handles}", response_model=List[UserInfo], responses={404: {"model": ErrorResponse}})
-async def users_info(handles: str = Path(..., description="Semicolon-separated list of Codeforces handles")):
+@app.get("/multi/{userids}", response_model=List[UserInfo], responses={404: {"model": ErrorResponse}})
+async def users_info(userids: str = Path(..., description="Semicolon-separated list of Codeforces handles")):
     """Get information about multiple Codeforces users."""
     handles_list = []
-    if ';' in handles:
-        handles_list = handles.split(';')
-    elif ',' in handles:
-        handles_list = handles.split(',')
+    if ';' in userids:
+        handles_list = userids.split(';')
+    elif ',' in userids:
+        handles_list = userids.split(',')
     else:
-        handles_list = [handles]
+        handles_list = [userids]
     
     # Clean up handles list to remove any empty strings
     handles_list = [h.strip() for h in handles_list if h.strip()]
@@ -135,21 +135,21 @@ async def users_info(handles: str = Path(..., description="Semicolon-separated l
     
     return user_info
 
-@app.get("/users/{handle}/rating", response_model=List[RatingHistory], responses={404: {"model": ErrorResponse}})
-async def user_rating(handle: str = Path(..., description="Codeforces handle")):
+@app.get("/{userid}/rating", response_model=List[RatingHistory], responses={404: {"model": ErrorResponse}})
+async def user_rating(userid: str = Path(..., description="Codeforces handle")):
     """Get rating history of a Codeforces user."""
-    rating_history = get_user_rating(handle)
+    rating_history = get_user_rating(userid)
     if rating_history is None:
-        raise HTTPException(status_code=404, detail=f"Rating history not found for {handle}")
+        raise HTTPException(status_code=404, detail=f"Rating history not found for {userid}")
     return rating_history
 
-@app.get("/users/{handle}/solved", response_model=SolvedProblemsCount, responses={404: {"model": ErrorResponse}})
-async def solved_problems(handle: str = Path(..., description="Codeforces handle")):
+@app.get("/{userid}/solved", response_model=SolvedProblemsCount, responses={404: {"model": ErrorResponse}})
+async def solved_problems(userid: str = Path(..., description="Codeforces handle")):
     """Get the number of solved problems for a Codeforces user."""
-    solved_count = get_solved_problem_count(handle)
+    solved_count = get_solved_problem_count(userid)
     if solved_count is None:
-        raise HTTPException(status_code=404, detail=f"Solved problem count not found for {handle}")
-    return {"handle": handle, "count": solved_count}
+        raise HTTPException(status_code=404, detail=f"Solved problem count not found for {userid}")
+    return {"handle": userid, "count": solved_count}
 
 @app.get("/contests/upcoming", response_model=List[Contest], responses={404: {"model": ErrorResponse}})
 async def upcoming_contests(gym: bool = False):
@@ -159,25 +159,25 @@ async def upcoming_contests(gym: bool = False):
         raise HTTPException(status_code=404, detail=f"Upcoming contests data not found")
     return contests
 
-@app.get("/users/{handle}/contests", response_model=Dict[str, Any], responses={404: {"model": ErrorResponse}})
-async def contests_participated(handle: str = Path(..., description="Codeforces handle")):
+@app.get("/{userid}/contests", response_model=Dict[str, Any], responses={404: {"model": ErrorResponse}})
+async def contests_participated(userid: str = Path(..., description="Codeforces handle")):
     """Get contests participated by a Codeforces user."""
-    contests = get_contests_participated_by_user(handle)
+    contests = get_contests_participated_by_user(userid)
     if not contests:
-        raise HTTPException(status_code=404, detail=f"Contest participation data not found for {handle}")
-    return {"handle": handle, "contests": list(contests)}
+        raise HTTPException(status_code=404, detail=f"Contest participation data not found for {userid}")
+    return {"handle": userid, "contests": list(contests)}
 
-@app.get("/users/common-contests/{handles}", response_model=Dict[str, Any], responses={404: {"model": ErrorResponse}})
-async def common_contests(handles: str = Path(..., description="Semicolon-separated list of Codeforces handles")):
+@app.get("/users/common-contests/{userids}", response_model=Dict[str, Any], responses={404: {"model": ErrorResponse}})
+async def common_contests(userids: str = Path(..., description="Semicolon-separated list of Codeforces handles")):
     """Get common contests participated by multiple Codeforces users."""
     # Support both semicolon and comma as separators
     handles_list = []
-    if ';' in handles:
-        handles_list = handles.split(';')
-    elif ',' in handles:
-        handles_list = handles.split(',')
+    if ';' in userids:
+        handles_list = userids.split(';')
+    elif ',' in userids:
+        handles_list = userids.split(',')
     else:
-        handles_list = [handles]  # Single handle
+        handles_list = [userids]  # Single handle
 
     # Remove any empty strings from the list
     handles_list = [h.strip() for h in handles_list if h.strip()]
