@@ -70,6 +70,13 @@ class Contest(BaseModel):
     season: Optional[str] = None
 
 
+class UserAllStats(UserInfo):
+    """Model for comprehensive user statistics including profile, contests, and problems."""
+    contests_count: int = Field(0, description="Number of contests participated in")
+    solved_problems_count: int = Field(0, description="Number of problems solved")
+    rating_history: Optional[List[RatingHistory]] = Field(None, description="History of rating changes")
+
+
 def get_user_info(handles):
     """
     Fetches information about Codeforces users.
@@ -179,13 +186,13 @@ def get_upcoming_contests(gym=False):
 
 def get_contests_participated_by_user(handle):
     """
-    Gets a list of contests that the given Codeforces users have participated in.
+    Gets a list of contests that the given Codeforces user has participated in.
 
     Args:
-        handles: A list of Codeforces user handles.
+        handle: A Codeforces user handle.
 
     Returns:
-        A set of contest IDs representing the contests participated in by the users.
+        A set of contest IDs representing the contests participated in by the user.
     """
     contests = set()
     time.sleep(2)  # Respect rate limit (1 request per 2 seconds)
@@ -234,6 +241,42 @@ def get_common_contests(handles):
             common_contests = common_contests.intersection(user_contests)
 
     return common_contests if common_contests is not None else set()
+
+
+def get_user_all_stats(handle):
+    """
+    Gets comprehensive statistics for a Codeforces user including profile info,
+    number of contests participated in, and number of problems solved.
+
+    Args:
+        handle: A Codeforces user handle.
+
+    Returns:
+        A UserAllStats object with all user statistics, or None if there was an error.
+    """
+    user_info = get_user_info([handle])
+    if not user_info:
+        return None
+    
+    # Get contest participation
+    contests = get_contests_participated_by_user(handle)
+    contests_count = len(contests) if contests else 0
+    
+    # Get solved problems count
+    solved_count = get_solved_problem_count(handle)
+    if solved_count is None:
+        solved_count = 0
+    
+    # Get rating history
+    rating_history = get_user_rating(handle)
+    
+    # Create UserAllStats object
+    all_stats = UserAllStats(**user_info[0])
+    all_stats.contests_count = contests_count
+    all_stats.solved_problems_count = solved_count
+    all_stats.rating_history = rating_history
+    
+    return all_stats
 
 
 if __name__ == '__main__':
@@ -287,3 +330,17 @@ if __name__ == '__main__':
         print(f"Common contests participated in by the users: " , handles, "\n", common_contests)
     else:
         print("No common contests found, or could not retrieve contest data for all users.")
+    
+    # Test the new get_user_all_stats function
+    for handle in handles:
+        print(f"\nGetting all statistics for {handle}...")
+        all_stats = get_user_all_stats(handle)
+        if all_stats:
+            print(f"User: {all_stats.handle}")
+            print(f"Rating: {all_stats.rating}")
+            print(f"Rank: {all_stats.rank}")
+            print(f"Contests participated: {all_stats.contests_count}")
+            print(f"Problems solved: {all_stats.solved_problems_count}")
+            print(f"Rating changes: {len(all_stats.rating_history) if all_stats.rating_history else 0}")
+        else:
+            print(f"Could not retrieve all statistics for {handle}")
