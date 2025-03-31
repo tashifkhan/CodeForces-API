@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get("/{userid}", response_model=UserAllStats, responses={404: {"model": ErrorResponse}})
 async def user_all_stats(userid: str = Path(..., description="Codeforces handle")):
     """Get comprehensive statistics for a Codeforces user."""
-    stats = get_user_all_stats(userid)
+    stats = await get_user_all_stats(userid)
     if stats is None:
         raise HTTPException(status_code=404, detail=f"Stats not found for {userid}")
     return stats
@@ -22,7 +22,7 @@ async def user_all_stats(userid: str = Path(..., description="Codeforces handle"
 @router.get("/{userid}/basic", response_model=UserInfo, responses={404: {"model": ErrorResponse}})
 async def user_basic_info(userid: str = Path(..., description="Codeforces handle")):
     """Get basic information about a Codeforces user."""
-    user_info = get_user_info([userid])
+    user_info = await get_user_info([userid])
     if not user_info:
         raise HTTPException(status_code=404, detail=f"User information not found for {userid}")
     return user_info[0]
@@ -36,35 +36,38 @@ async def users_info(userids: str = Path(..., description="Semicolon-separated l
     if not handles_list:
         raise HTTPException(status_code=400, detail="No valid handles provided")
     
-    user_info = get_user_info(handles_list)
+    user_info = await get_user_info(handles_list)
     if not user_info:
         raise HTTPException(status_code=404, detail="User information not found")
     
     return user_info
 
 
+
 @router.get("/{userid}/rating", response_model=List[RatingHistory], responses={404: {"model": ErrorResponse}})
 async def user_rating(userid: str = Path(..., description="Codeforces handle")):
     """Get rating history of a Codeforces user."""
-    rating_history = get_user_rating(userid)
+    rating_history = await get_user_rating(userid)
     if rating_history is None:
         raise HTTPException(status_code=404, detail=f"Rating history not found for {userid}")
     return rating_history
 
 
+
 @router.get("/{userid}/solved", response_model=SolvedProblemsCount, responses={404: {"model": ErrorResponse}})
 async def solved_problems(userid: str = Path(..., description="Codeforces handle")):
     """Get the number of solved problems for a Codeforces user."""
-    solved_count = get_solved_problem_count(userid)
+    solved_count = await get_solved_problem_count(userid)
     if solved_count is None:
         raise HTTPException(status_code=404, detail=f"Solved problem count not found for {userid}")
     return {"handle": userid, "count": solved_count}
 
 
+
 @router.get("/{userid}/contests", response_model=Dict[str, Any], responses={404: {"model": ErrorResponse}})
 async def contests_participated(userid: str = Path(..., description="Codeforces handle")):
     """Get contests participated by a Codeforces user."""
-    contests = get_contests_participated_by_user(userid)
+    contests = await get_contests_participated_by_user(userid)
     if not contests:
         raise HTTPException(status_code=404, detail=f"Contest participation data not found for {userid}")
     return {"handle": userid, "contests": list(contests)}
@@ -78,5 +81,5 @@ async def common_contests(userids: str = Path(..., description="Semicolon-separa
     if not handles_list:
         raise HTTPException(status_code=400, detail="No valid handles provided")
 
-    common = get_common_contests(handles_list)
+    common = await get_common_contests(handles_list)
     return {"handles": handles_list, "common_contests": list(common)}
