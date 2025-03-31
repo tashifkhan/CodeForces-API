@@ -10,7 +10,7 @@ class Config:
     VERSION = "1.0.0"
 
     # Environment settings
-    ENV = "development"  # or "production"
+    ENV = "production"  # or "development"
     
     @classmethod
     def is_dev(cls):
