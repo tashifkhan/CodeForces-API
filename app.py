@@ -3,6 +3,8 @@ import json
 import time
 from typing import Dict, List, Optional, Any, Set
 from pydantic import BaseModel, Field
+from fastapi import FastAPI, HTTPException, Query, Path
+import uvicorn
 
 class ErrorResponse(BaseModel):
     """Error response model."""
@@ -76,6 +78,117 @@ class UserAllStats(UserInfo):
     solved_problems_count: int = Field(0, description="Number of problems solved")
     rating_history: Optional[List[RatingHistory]] = Field(None, description="History of rating changes")
 
+
+app = FastAPI(
+    title="Codeforces API",
+    description="A FastAPI wrapper for the Codeforces API",
+    version="1.0.0",
+)
+
+@app.get("/", response_model=Dict[str, str])
+async def root():
+    """Root endpoint that provides basic API information."""
+    return {"message": "Welcome to the Codeforces API wrapper. Visit /docs for documentation."}
+
+@app.get("/users/{handle}", response_model=UserAllStats, responses={404: {"model": ErrorResponse}})
+async def user_all_stats(handle: str = Path(..., description="Codeforces handle")):
+    """
+    Get comprehensive statistics for a Codeforces user.
+    
+    This includes profile info, contests participated, problems solved, and rating history.
+    """
+    stats = get_user_all_stats(handle)
+    if stats is None:
+        raise HTTPException(status_code=404, detail=f"Stats not found for {handle}")
+    return stats
+
+@app.get("/users/{handle}/basic", response_model=UserInfo, responses={404: {"model": ErrorResponse}})
+async def user_basic_info(handle: str = Path(..., description="Codeforces handle")):
+    """Get basic information about a Codeforces user."""
+    user_info = get_user_info([handle])
+    if not user_info:
+        raise HTTPException(status_code=404, detail=f"User information not found for {handle}")
+    return user_info[0]
+
+@app.get("/users/multi/{handles}", response_model=List[UserInfo], responses={404: {"model": ErrorResponse}})
+async def users_info(handles: str = Path(..., description="Semicolon-separated list of Codeforces handles")):
+    """Get information about multiple Codeforces users."""
+    handles_list = []
+    if ';' in handles:
+        handles_list = handles.split(';')
+    elif ',' in handles:
+        handles_list = handles.split(',')
+    else:
+        handles_list = [handles]
+    
+    # Clean up handles list to remove any empty strings
+    handles_list = [h.strip() for h in handles_list if h.strip()]
+    
+    if not handles_list:
+        raise HTTPException(status_code=400, detail="No valid handles provided")
+    
+    # Call get_user_info directly with the list of handles
+    user_info = get_user_info(handles_list)
+    
+    if not user_info:
+        raise HTTPException(status_code=404, detail=f"User information not found")
+    
+    return user_info
+
+@app.get("/users/{handle}/rating", response_model=List[RatingHistory], responses={404: {"model": ErrorResponse}})
+async def user_rating(handle: str = Path(..., description="Codeforces handle")):
+    """Get rating history of a Codeforces user."""
+    rating_history = get_user_rating(handle)
+    if rating_history is None:
+        raise HTTPException(status_code=404, detail=f"Rating history not found for {handle}")
+    return rating_history
+
+@app.get("/users/{handle}/solved", response_model=SolvedProblemsCount, responses={404: {"model": ErrorResponse}})
+async def solved_problems(handle: str = Path(..., description="Codeforces handle")):
+    """Get the number of solved problems for a Codeforces user."""
+    solved_count = get_solved_problem_count(handle)
+    if solved_count is None:
+        raise HTTPException(status_code=404, detail=f"Solved problem count not found for {handle}")
+    return {"handle": handle, "count": solved_count}
+
+@app.get("/contests/upcoming", response_model=List[Contest], responses={404: {"model": ErrorResponse}})
+async def upcoming_contests(gym: bool = False):
+    """Get upcoming contests from Codeforces."""
+    contests = get_upcoming_contests(gym)
+    if contests is None:
+        raise HTTPException(status_code=404, detail=f"Upcoming contests data not found")
+    return contests
+
+@app.get("/users/{handle}/contests", response_model=Dict[str, Any], responses={404: {"model": ErrorResponse}})
+async def contests_participated(handle: str = Path(..., description="Codeforces handle")):
+    """Get contests participated by a Codeforces user."""
+    contests = get_contests_participated_by_user(handle)
+    if not contests:
+        raise HTTPException(status_code=404, detail=f"Contest participation data not found for {handle}")
+    return {"handle": handle, "contests": list(contests)}
+
+@app.get("/users/common-contests/{handles}", response_model=Dict[str, Any], responses={404: {"model": ErrorResponse}})
+async def common_contests(handles: str = Path(..., description="Semicolon-separated list of Codeforces handles")):
+    """Get common contests participated by multiple Codeforces users."""
+    # Support both semicolon and comma as separators
+    handles_list = []
+    if ';' in handles:
+        handles_list = handles.split(';')
+    elif ',' in handles:
+        handles_list = handles.split(',')
+    else:
+        handles_list = [handles]  # Single handle
+
+    # Remove any empty strings from the list
+    handles_list = [h.strip() for h in handles_list if h.strip()]
+    
+    if not handles_list:
+        raise HTTPException(status_code=400, detail="No valid handles provided")
+
+    common = get_common_contests(handles_list)
+    if common is None:
+        raise HTTPException(status_code=404, detail=f"Common contest data not found for {handles}")
+    return {"handles": handles_list, "common_contests": list(common)}
 
 def get_user_info(handles):
     """
@@ -220,28 +333,39 @@ def get_common_contests(handles):
         handles: A list of Codeforces user handles.
 
     Returns:
-        A set of contest IDs representing the contests participated in by all users.
+        A set of contest IDs representing the contests participated in by all users,
+        or None if there was a critical error fetching data.
     """
     if not handles:
         return set()  # No users, no contests
 
-    common_contests = None  # Initialize to None
-
+    all_users_contests = []
+    
     for handle in handles:
         user_contests = get_contests_participated_by_user(handle)
         if user_contests is None:
             print(f"Could not retrieve contest data for {handle}. Skipping.")
-            continue  # Skip to the next user
-
-        if common_contests is None:
-            # For the first user, initialize common_contests to their contests
-            common_contests = user_contests
-        else:
-            # For subsequent users, take the intersection with the current common_contests
-            common_contests = common_contests.intersection(user_contests)
-
-    return common_contests if common_contests is not None else set()
-
+            continue
+        
+        if not user_contests:  # If user has no contests
+            print(f"User {handle} has no contest participation")
+            # If any user has no contests, the intersection will be empty
+            return set()
+        
+        all_users_contests.append(user_contests)
+    
+    if not all_users_contests:
+        # If we couldn't retrieve contest data for any user
+        return set()
+    
+    # Start with the first user's contests
+    common_contests = all_users_contests[0]
+    
+    # Take intersection with each subsequent user's contests
+    for user_contests in all_users_contests[1:]:
+        common_contests = common_contests.intersection(user_contests)
+    
+    return common_contests
 
 def get_user_all_stats(handle):
     """
@@ -254,6 +378,14 @@ def get_user_all_stats(handle):
     Returns:
         A UserAllStats object with all user statistics, or None if there was an error.
     """
+    # Make sure handle is a string, not a list
+    if isinstance(handle, list):
+        # This function only works with a single handle
+        # If a list is passed, we'll just use the first one
+        if not handle:  # Empty list
+            return None
+        handle = handle[0]
+        
     user_info = get_user_info([handle])
     if not user_info:
         return None
@@ -280,67 +412,4 @@ def get_user_all_stats(handle):
 
 
 if __name__ == '__main__':
-    handles = ["tourist", "AdarSharma"]
-    user_info = get_user_info(handles)
-
-    if user_info:
-        print("User Info:")
-        for user in user_info:
-            print(json.dumps(user, indent=4)) # Print formatted JSON
-            print("-" * 20)
-    
-    for handle in handles:
-        solved_count = get_solved_problem_count(handle)
-        if solved_count is not None:
-            print(f"Number of solved problems for {handle}: {solved_count}")
-        else:
-            print(f"Could not retrieve solved problem count for {handle}")
-
-    upcoming = get_upcoming_contests()
-    if upcoming:
-        print("Upcoming Contests:")
-        for contest in upcoming:
-            print(f"  Name: {contest['name']}")
-            print(f"  ID: {contest['id']}")
-            print(f"  Start Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(contest['startTimeSeconds']))}")  # Format the time
-            print("-" * 20)
-    else:
-        print("Could not retrieve upcoming contests.")
-
-    for handle in handles:
-        rating_history = get_user_rating(handle)
-        if rating_history:
-            print(f"\nRating History for {handle}:")
-            for change in rating_history:
-                print(json.dumps(change, indent=4))
-                print("-" * 20)
-        else:
-            print(f"Could not retrieve rating history for {handle}")
-
-    for handle in handles:
-        contests = get_contests_participated_by_user(handle)
-        if contests:
-            print(f"Contests participated in by the user {handle}:\n", contests, "\n")
-        else:
-            print("Could not retrieve contest data.")
-    
-    common_contests = get_common_contests(handles)
-
-    if common_contests:
-        print(f"Common contests participated in by the users: " , handles, "\n", common_contests)
-    else:
-        print("No common contests found, or could not retrieve contest data for all users.")
-    
-    # Test the new get_user_all_stats function
-    for handle in handles:
-        print(f"\nGetting all statistics for {handle}...")
-        all_stats = get_user_all_stats(handle)
-        if all_stats:
-            print(f"User: {all_stats.handle}")
-            print(f"Rating: {all_stats.rating}")
-            print(f"Rank: {all_stats.rank}")
-            print(f"Contests participated: {all_stats.contests_count}")
-            print(f"Problems solved: {all_stats.solved_problems_count}")
-            print(f"Rating changes: {len(all_stats.rating_history) if all_stats.rating_history else 0}")
-        else:
-            print(f"Could not retrieve all statistics for {handle}")
+    uvicorn.run("app:app", host="0.0.0.0", port=58353, reload=True)
