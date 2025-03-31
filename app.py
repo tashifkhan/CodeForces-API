@@ -3,11 +3,12 @@ from fastapi.responses import HTMLResponse
 import uvicorn
 from routes import user_routes, contest_routes
 from models.templates import html_template
+from config import Config
 
 app = FastAPI(
-    title="Codeforces Stats API",
-    description="A FastAPI app for the Codeforces Stats",
-    version="1.0.0",
+    title=Config.TITLE,
+    description=Config.DESCRIPTION,
+    version=Config.VERSION,
 )
 
 app.include_router(user_routes.router)
@@ -21,4 +22,7 @@ async def root():
     return HTMLResponse(content=html_template)
 
 if __name__ == '__main__':
-    uvicorn.run("app:app", host="0.0.0.0", port=58353, reload=True)
+    uvicorn.run("app:app", 
+                host=Config.get_host(), 
+                port=Config.get_port(), 
+                reload=Config.RELOAD if Config.is_dev() else False)
