@@ -173,23 +173,6 @@ html_template = """
             margin: 1.25rem 0;
             border-radius: 0 8px 8px 0;
         }
-                padding: 1rem 0.5rem;
-            }
-            .endpoint-header {
-                padding: 1rem;
-            }
-            h1 {
-                font-size: 1.8rem;
-            }
-            pre {
-                padding: 0.75rem;
-                font-size: 0.85em;
-            }
-            .parameter, .error-response, .note {
-                padding: 1rem;
-                margin: 1rem 0;
-            }
-        }
         .method {
             color: #ff79c6;
             font-weight: bold;
@@ -348,6 +331,42 @@ html_template = """
         footer a:hover:after {
             transform: scaleX(1);
             transform-origin: left;
+        }
+        
+        /* Circular Loader Styles */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--hover-color);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading p {
+            color: var(--text-color);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        /* Disable button during loading */
+        .try-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
         }
     </style>
 </head>
@@ -797,10 +816,10 @@ html_template = """
         // Codeforces Dashboard Functionality
         async function exploreCFUser() {
             const handleInput = document.getElementById('cf-handle');
-            const loading = document.getElementById('cf-dashboard-loading');
             const results = document.getElementById('cf-dashboard-results');
+            const analyzeButton = document.querySelector('button[onclick="exploreCFUser()"]');
             
-            if (!handleInput || !loading || !results) {
+            if (!handleInput || !results) {
                 console.error('Required DOM elements not found');
                 return;
             }
@@ -811,9 +830,12 @@ html_template = """
                 return;
             }
             
-            // Show loading
-            loading.style.display = 'block';
+            // Show loading and disable button
             results.style.display = 'none';
+            if (analyzeButton) {
+                analyzeButton.disabled = true;
+                analyzeButton.innerHTML = '<div class="spinner" style="margin: 0 auto; width: 1.5rem; height: 1.5rem; border-width: 3px;"></div>';
+            }
             
             try {
                 // Fetch user data from the API
@@ -829,7 +851,14 @@ html_template = """
                 console.error('Error fetching data:', error);
                 showCFError('Failed to fetch Codeforces data. Please check the handle and try again.');
             } finally {
-                loading.style.display = 'none';
+                // Hide loading and re-enable button
+                if (analyzeButton) {
+                    analyzeButton.disabled = false;
+                    analyzeButton.innerHTML = `
+                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" style="width: 1.2rem; height: 1.2rem;"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        Analyze
+                    `;
+                }
             }
         }
         
