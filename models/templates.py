@@ -352,9 +352,84 @@ html_template = """
     </style>
 </head>
 <body>
-    <a href="/docs" class="swagger-link">Swagger UI</a>
-    <h1>CodeForces Stats API Documentation</h1>
+    <a href="/docs" class="swagger-link" style="right: 8.5rem;">Swagger UI</a>
+    <a href="/redoc" class="swagger-link">ReDoc</a>
+    <h1>CodeForces Stats Profile Dashboard</h1>
     
+    <!-- Interactive Dashboard Section -->
+    <div class="dashboard-section" style="background: var(--card-background); border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem; border: 1px solid var(--hover-color); text-align: center;">
+        <h2 style="color: var(--heading-color); margin-bottom: 1.5rem;">Explore a Codeforces Profile</h2>
+        <div class="input-group" style="display: flex; justify-content: center; gap: 1rem; max-width: 500px; margin: 0 auto;">
+            <input type="text" id="cf-handle" placeholder="Enter Codeforces handle (e.g., tourist)" style="flex: 1; padding: 0.75rem 1rem; border: 2px solid var(--hover-color); border-radius: 8px; background: var(--code-background); color: var(--text-color); font-family: inherit; font-size: 1rem; transition: border-color 0.2s ease;" />
+            <button onclick="exploreCFUser()" class="try-button" style="background: var(--accent-color); color: var(--background-color); font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" style="width: 1.2rem; height: 1.2rem;"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                Analyze
+            </button>
+        </div>
+        <div id="cf-dashboard-loading" class="loading" style="display: none; margin-top: 1.5rem;">
+            <div class="spinner"></div>
+            <p>Fetching Codeforces data...</p>
+        </div>
+        <div id="cf-dashboard-results" class="profile-results" style="display: none; margin-top: 2rem;">
+            <!-- Profile Overview Cards -->
+            <div class="profile-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <div class="profile-card" style="background: var(--hover-color); border-radius: 12px; padding: 1.5rem; text-align: center;">
+                    <div class="card-icon">
+                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <div class="card-content">
+                        <h4 style="color: var(--text-color); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Handle</h4>
+                        <div id="cf-handle-value" class="card-value" style="color: var(--secondary-color); font-size: 1.5rem; font-weight: 700;">-</div>
+                    </div>
+                </div>
+                <div class="profile-card" style="background: var(--hover-color); border-radius: 12px; padding: 1.5rem; text-align: center;">
+                    <div class="card-icon">
+                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                    </div>
+                    <div class="card-content">
+                        <h4 style="color: var(--text-color); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Rating</h4>
+                        <div id="cf-rating" class="card-value" style="color: var(--secondary-color); font-size: 1.5rem; font-weight: 700;">-</div>
+                    </div>
+                </div>
+                <div class="profile-card" style="background: var(--hover-color); border-radius: 12px; padding: 1.5rem; text-align: center;">
+                    <div class="card-icon">
+                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <div class="card-content">
+                        <h4 style="color: var(--text-color); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Max Rating</h4>
+                        <div id="cf-max-rating" class="card-value" style="color: var(--secondary-color); font-size: 1.5rem; font-weight: 700;">-</div>
+                    </div>
+                </div>
+                <div class="profile-card" style="background: var(--hover-color); border-radius: 12px; padding: 1.5rem; text-align: center;">
+                    <div class="card-icon">
+                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.5 2.54l2.6 1.53c.56-1.24.9-2.62.9-4.07 0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-5.05.5-9 4.76-9 9.95 0 5.52 4.47 10 9.99 10 3.31 0 6.24-1.61 8.06-4.09l-2.6-1.53C16.17 17.98 14.21 19 12 19z"/></svg>
+                    </div>
+                    <div class="card-content">
+                        <h4 style="color: var(--text-color); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Contests</h4>
+                        <div id="cf-contests" class="card-value" style="color: var(--secondary-color); font-size: 1.5rem; font-weight: 700;">-</div>
+                    </div>
+                </div>
+                <div class="profile-card" style="background: var(--hover-color); border-radius: 12px; padding: 1.5rem; text-align: center;">
+                    <div class="card-icon">
+                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+                    </div>
+                    <div class="card-content">
+                        <h4 style="color: var(--text-color); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Solved</h4>
+                        <div id="cf-solved" class="card-value" style="color: var(--secondary-color); font-size: 1.5rem; font-weight: 700;">-</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Language Bar (Placeholder) -->
+            <div id="cf-languages" class="languages-chart" style="margin-bottom: 2rem;"></div>
+            <!-- Contest History (Placeholder) -->
+            <div id="cf-contest-history" style="margin-bottom: 2rem;"></div>
+            <!-- Recent Contests (Placeholder) -->
+            <div id="cf-recent-contests"></div>
+        </div>
+    </div>
+
+     <h1>CodeForces Stats API Documentation</h1>
+
     <p>This API provides access to CodeForces user statistics and contest data. Explore the endpoints below.</p>
 
     <div class="endpoint">
@@ -707,7 +782,149 @@ html_template = """
             if (endpoints.length > 0) {
                 endpoints[0].classList.add('active');
             }
+
+            // Add Enter key support for the Codeforces handle input
+            const cfHandleInput = document.getElementById('cf-handle');
+            if (cfHandleInput) {
+                cfHandleInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        exploreCFUser();
+                    }
+                });
+            }
         });
+
+        // Codeforces Dashboard Functionality
+        async function exploreCFUser() {
+            const handleInput = document.getElementById('cf-handle');
+            const loading = document.getElementById('cf-dashboard-loading');
+            const results = document.getElementById('cf-dashboard-results');
+            
+            if (!handleInput || !loading || !results) {
+                console.error('Required DOM elements not found');
+                return;
+            }
+            
+            const handle = handleInput.value.trim();
+            if (!handle) {
+                alert('Please enter a Codeforces handle');
+                return;
+            }
+            
+            // Show loading
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            
+            try {
+                // Fetch user data from the API
+                const response = await fetch(`/${handle}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayCFResults(handle, data);
+                } else {
+                    showCFError(data.detail || 'Failed to fetch user data');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showCFError('Failed to fetch Codeforces data. Please check the handle and try again.');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        
+        function displayCFResults(handle, data) {
+            const results = document.getElementById('cf-dashboard-results');
+            
+            // Update profile cards
+            const elements = {
+                'cf-handle-value': document.getElementById('cf-handle-value'),
+                'cf-rating': document.getElementById('cf-rating'),
+                'cf-max-rating': document.getElementById('cf-max-rating'),
+                'cf-contests': document.getElementById('cf-contests'),
+                'cf-solved': document.getElementById('cf-solved')
+            };
+            
+            if (elements['cf-handle-value']) elements['cf-handle-value'].textContent = handle;
+            if (elements['cf-rating']) elements['cf-rating'].textContent = data.rating || 'N/A';
+            if (elements['cf-max-rating']) elements['cf-max-rating'].textContent = data.maxRating || 'N/A';
+            if (elements['cf-contests']) elements['cf-contests'].textContent = data.contests_count || 'N/A';
+            if (elements['cf-solved']) elements['cf-solved'].textContent = data.solved_problems_count || 'N/A';
+            
+            // Display rating history if available
+            displayRatingHistory(data.rating_history || []);
+            
+            // Display recent contests if available
+            displayRecentContests(data.rating_history || []);
+            
+            results.style.display = 'block';
+        }
+        
+        function displayRatingHistory(ratingHistory) {
+            const container = document.getElementById('cf-contest-history');
+            if (!container) return;
+            
+            if (ratingHistory.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-color); padding: 2rem;">No contest history available</div>';
+                return;
+            }
+            
+            // Show last 10 contests
+            const recentContests = ratingHistory.slice(-10).reverse();
+            
+            let html = '<h3 style="color: var(--heading-color); margin-bottom: 1rem;">Recent Contest History</h3>';
+            html += '<div style="display: flex; flex-direction: column; gap: 1rem;">';
+            
+            recentContests.forEach(contest => {
+                const ratingChange = contest.newRating - contest.oldRating;
+                const changeColor = ratingChange >= 0 ? '#4caf50' : '#f44336';
+                const changeSymbol = ratingChange >= 0 ? '+' : '';
+                
+                html += `
+                    <div style="background: var(--hover-color); border-radius: 8px; padding: 1rem; border-left: 4px solid var(--accent-color);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span style="color: var(--secondary-color); font-weight: 600;">${contest.contestName}</span>
+                            <span style="color: ${changeColor}; font-weight: 600;">${changeSymbol}${ratingChange}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                            <span style="color: var(--text-color);">Rank: ${contest.rank}</span>
+                            <span style="color: var(--text-color);">${contest.oldRating} → ${contest.newRating}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function displayRecentContests(ratingHistory) {
+            const container = document.getElementById('cf-recent-contests');
+            if (!container) return;
+            
+            if (ratingHistory.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-color); padding: 2rem;">No recent contests available</div>';
+                return;
+            }
+            
+            // Show upcoming contests (this would need a separate API call)
+            container.innerHTML = `
+                <h3 style="color: var(--heading-color); margin-bottom: 1rem;">Upcoming Contests</h3>
+                <div style="text-align: center; color: var(--text-color); padding: 2rem;">
+                    <p>Check <a href="/contests/upcoming" style="color: var(--accent-color);">upcoming contests</a> for the latest competition schedule.</p>
+                </div>
+            `;
+        }
+        
+        function showCFError(message) {
+            const results = document.getElementById('cf-dashboard-results');
+            if (!results) {
+                console.error('Results container not found');
+                return;
+            }
+            results.innerHTML = `<div style="background: #ff6b6b; color: white; padding: 1rem; border-radius: 8px; text-align: center; margin: 1rem 0;">${message}</div>`;
+            results.style.display = 'block';
+        }
     </script>
 </body>
 </html>
