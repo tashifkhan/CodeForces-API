@@ -4,6 +4,18 @@ A robust RESTful API to fetch and display CodeForces statistics for users, built
 
 Hosted at [codeforces-stats.tashif.codes](https://codeforces-stats.tashif.codes)
 
+## Interactive Dashboard Implementation
+
+- **Interactive Profile Explorer**: Added a live dashboard at the root endpoint (`/`) that allows users to explore CodeForces profiles in real-time
+- **Real-time Data Fetching**: Users can enter any CodeForces handle and instantly view comprehensive statistics
+- **Visual Profile Cards**: Beautiful card-based layout displaying key metrics:
+  - Current Rating
+  - Maximum Rating Achieved
+  - Total Contests Participated
+  - Problems Solved Count
+- **Contest History Visualization**: Interactive display of recent contest performance with rating changes
+- **Responsive Design**: Modern, mobile-friendly interface with smooth animations and hover effects
+
 ## Features
 
 - Retrieve user's rating, rank, and maximum achieved rating
@@ -12,6 +24,7 @@ Hosted at [codeforces-stats.tashif.codes](https://codeforces-stats.tashif.codes)
 - Fetch multiple users' information simultaneously
 - Track upcoming contests
 - Find common contests between multiple users
+- **Interactive Dashboard** for real-time profile exploration
 - Easy integration with other applications
 - Rate-limited endpoints to respect CodeForces API limits
 
