@@ -368,6 +368,209 @@ html_template = """
             cursor: not-allowed;
             transform: none !important;
         }
+
+        /* Custom Dropdown Styles */
+        .input-container {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        #cf-handle {
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            border: 2px solid var(--hover-color);
+            border-radius: 8px;
+            background: var(--code-background);
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        #cf-handle:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+        }
+
+        .clear-history-btn {
+            position: absolute;
+            right: 0.5rem;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            opacity: 0.7;
+        }
+
+        .clear-history-btn:hover {
+            opacity: 1;
+            color: var(--secondary-color);
+            background: var(--hover-color);
+        }
+
+        .clear-history-btn .icon {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .history-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-background);
+            border: 1px solid var(--hover-color);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 8px 25px rgba(2,12,27,0.3);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 300px;
+            overflow: hidden;
+        }
+
+        .history-dropdown.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--hover-color);
+            background: var(--hover-color);
+        }
+
+        .dropdown-header span {
+            color: var(--heading-color);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .clear-all-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            opacity: 0.7;
+        }
+
+        .clear-all-btn:hover {
+            opacity: 1;
+            color: var(--secondary-color);
+            background: var(--card-background);
+        }
+
+        .clear-all-btn .icon {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .history-list {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(136, 146, 176, 0.1);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-item:hover {
+            background: var(--hover-color);
+        }
+
+        .history-item.selected {
+            background: var(--secondary-color);
+            color: var(--background-color);
+        }
+
+        .history-username {
+            color: var(--text-color);
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .history-item:hover .history-username,
+        .history-item.selected .history-username {
+            color: inherit;
+        }
+
+        .history-delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            opacity: 0;
+            margin-left: 0.5rem;
+        }
+
+        .history-item:hover .history-delete-btn {
+            opacity: 0.7;
+        }
+
+        .history-delete-btn:hover {
+            opacity: 1 !important;
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .history-delete-btn .icon {
+            width: 0.8rem;
+            height: 0.8rem;
+        }
+
+        .history-empty {
+            padding: 1rem;
+            text-align: center;
+            color: var(--text-color);
+            font-style: italic;
+            opacity: 0.7;
+        }
+
+        /* Scrollbar styling for dropdown */
+        .history-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .history-list::-webkit-scrollbar-track {
+            background: var(--code-background);
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: var(--hover-color);
+            border-radius: 3px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
     </style>
 </head>
 <body>
@@ -379,7 +582,25 @@ html_template = """
     <div class="dashboard-section" style="background: var(--card-background); border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem; border: 1px solid var(--hover-color); text-align: center;">
         <h2 style="color: var(--heading-color); margin-bottom: 1.5rem;">Explore a Codeforces Profile</h2>
         <div class="input-group" style="display: flex; justify-content: center; gap: 1rem; max-width: 500px; margin: 0 auto;">
-            <input type="text" id="cf-handle" placeholder="Enter Codeforces handle (e.g., tourist)" style="flex: 1; padding: 0.75rem 1rem; border: 2px solid var(--hover-color); border-radius: 8px; background: var(--code-background); color: var(--text-color); font-family: inherit; font-size: 1rem; transition: border-color 0.2s ease;" />
+            <div class="input-container">
+                <input type="text" id="cf-handle" placeholder="Enter Codeforces handle (e.g., tourist)" autocomplete="off" />
+                <button type="button" id="clear-history" class="clear-history-btn" title="Clear input">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+                <div id="history-dropdown" class="history-dropdown">
+                    <div class="dropdown-header">
+                        <span>Recent Searches</span>
+                        <button type="button" id="clear-all-history" class="clear-all-btn" title="Clear all history">
+                             <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="history-list" class="history-list"></div>
+                </div>
+            </div>
             <button onclick="exploreCFUser()" class="try-button" style="background: var(--accent-color); color: var(--background-color); font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
                 <svg class="icon" viewBox="0 0 24 24" fill="currentColor" style="width: 1.2rem; height: 1.2rem;"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                 Analyze
@@ -761,200 +982,347 @@ html_template = """
 <code>{
 "detail": "No valid handles provided"
 }</code>
-                </pre>
-            </div>
-        </div>
-    </div>
+             </pre>
+         </div>
+     </div>
 
-    <div class="note">
-        <h2>Usage Notes</h2>
-        <p>Please use this API responsibly and consider CodeForces' rate limits when making requests.</p>
-        <p>The API respects CodeForces' rate limiting of 1 request per 2 seconds.</p>
-    </div>
+     <div class="note">
+         <h2>Usage Notes</h2>
+         <p>Please use this API responsibly and consider CodeForces' rate limits when making requests.</p>
+         <p>The API respects CodeForces' rate limiting of 1 request per 2 seconds.</p>
+     </div>
 
-    <footer>
-        <p>This API is open source and available on <a href="https://github.com/tashifkhan/GFG-Stats-API" style="  text-decoration: none;">GitHub</a>.</p>
-        <p>Try it live at <a href="https://codeforces-stats.tashif.codes" style="text-decoration: none;">codeforces-stats.tashif.codes</a></p>
-    </footer>
+     <footer>
+         <p>This API is open source and available on <a href="https://github.com/tashifkhan/GFG-Stats-API" style="  text-decoration: none;">GitHub</a>.</p>
+         <p>Try it live at <a href="https://codeforces-stats.tashif.codes" style="text-decoration: none;">codeforces-stats.tashif.codes</a></p>
+     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Handle endpoint toggles
-            const endpoints = document.querySelectorAll('.endpoint');
-            endpoints.forEach(endpoint => {
-                const header = endpoint.querySelector('.endpoint-header');
-                header.addEventListener('click', () => {
-                    endpoint.classList.toggle('active');
-                });
-            });
-            
-            // Handle error toggles
-            const errorItems = document.querySelectorAll('.error-item');
-            errorItems.forEach(item => {
-                const toggle = item.querySelector('.error-toggle');
-                toggle.addEventListener('click', () => {
-                    item.classList.toggle('active');
-                });
-            });
-            
-            // Make the first endpoint active by default for better UX
-            if (endpoints.length > 0) {
-                endpoints[0].classList.add('active');
-            }
+     <script>
+         document.addEventListener('DOMContentLoaded', function() {
+             // Handle endpoint toggles
+             const endpoints = document.querySelectorAll('.endpoint');
+             endpoints.forEach(endpoint => {
+                 const header = endpoint.querySelector('.endpoint-header');
+                 header.addEventListener('click', () => {
+                     endpoint.classList.toggle('active');
+                 });
+             });
+             
+             // Handle error toggles
+             const errorItems = document.querySelectorAll('.error-item');
+             errorItems.forEach(item => {
+                 const toggle = item.querySelector('.error-toggle');
+                 toggle.addEventListener('click', () => {
+                     item.classList.toggle('active');
+                 });
+             });
+             
+             // Make the first endpoint active by default for better UX
+             if (endpoints.length > 0) {
+                 endpoints[0].classList.add('active');
+             }
 
-            // Add Enter key support for the Codeforces handle input
-            const cfHandleInput = document.getElementById('cf-handle');
-            if (cfHandleInput) {
-                cfHandleInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        exploreCFUser();
-                    }
-                });
-            }
-        });
+             // Initialize dropdown functionality
+             const cfHandleInput = document.getElementById('cf-handle');
+             if (cfHandleInput) {
+                 cfHandleInput.addEventListener('keypress', function(e) {
+                     if (e.key === 'Enter') {
+                         hideDropdown();
+                         exploreCFUser();
+                     }
+                 });
 
-        // Codeforces Dashboard Functionality
-        async function exploreCFUser() {
-            const handleInput = document.getElementById('cf-handle');
-            const results = document.getElementById('cf-dashboard-results');
-            const analyzeButton = document.querySelector('button[onclick="exploreCFUser()"]');
-            
-            if (!handleInput || !results) {
-                console.error('Required DOM elements not found');
-                return;
-            }
-            
-            const handle = handleInput.value.trim();
-            if (!handle) {
-                alert('Please enter a Codeforces handle');
-                return;
-            }
-            
-            // Show loading and disable button
-            results.style.display = 'none';
-            if (analyzeButton) {
-                analyzeButton.disabled = true;
-                analyzeButton.innerHTML = '<div class="spinner" style="margin: 0 auto; width: 1.5rem; height: 1.5rem; border-width: 3px;"></div>';
-            }
-            
-            try {
-                // Fetch user data from the API
-                const response = await fetch(`/${handle}`);
-                const data = await response.json();
-                
-                if (response.ok) {
-                    displayCFResults(handle, data);
-                } else {
-                    showCFError(data.detail || 'Failed to fetch user data');
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                showCFError('Failed to fetch Codeforces data. Please check the handle and try again.');
-            } finally {
-                // Hide loading and re-enable button
-                if (analyzeButton) {
-                    analyzeButton.disabled = false;
-                    analyzeButton.innerHTML = `
-                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" style="width: 1.2rem; height: 1.2rem;"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                        Analyze
-                    `;
-                }
-            }
-        }
-        
-        function displayCFResults(handle, data) {
-            const results = document.getElementById('cf-dashboard-results');
-            
-            // Update profile cards
-            const elements = {
-                'cf-handle-value': document.getElementById('cf-handle-value'),
-                'cf-rating': document.getElementById('cf-rating'),
-                'cf-max-rating': document.getElementById('cf-max-rating'),
-                'cf-contests': document.getElementById('cf-contests'),
-                'cf-solved': document.getElementById('cf-solved')
-            };
-            
-            if (elements['cf-handle-value']) elements['cf-handle-value'].textContent = handle;
-            if (elements['cf-rating']) elements['cf-rating'].textContent = data.rating || 'N/A';
-            if (elements['cf-max-rating']) elements['cf-max-rating'].textContent = data.maxRating || 'N/A';
-            if (elements['cf-contests']) elements['cf-contests'].textContent = data.contests_count || 'N/A';
-            if (elements['cf-solved']) elements['cf-solved'].textContent = data.solved_problems_count || 'N/A';
-            
-            // Display rating history if available
-            displayRatingHistory(data.rating_history || []);
-            
-            // Display recent contests if available
-            displayRecentContests(data.rating_history || []);
-            
-            results.style.display = 'block';
-        }
-        
-        function displayRatingHistory(ratingHistory) {
-            const container = document.getElementById('cf-contest-history');
-            if (!container) return;
-            
-            if (ratingHistory.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: var(--text-color); padding: 2rem;">No contest history available</div>';
-                return;
-            }
-            
-            // Show last 10 contests
-            const recentContests = ratingHistory.slice(-10).reverse();
-            
-            let html = '<h3 style="color: var(--heading-color); margin-bottom: 1rem;">Recent Contest History</h3>';
-            html += '<div style="display: flex; flex-direction: column; gap: 1rem;">';
-            
-            recentContests.forEach(contest => {
-                const ratingChange = contest.newRating - contest.oldRating;
-                const changeColor = ratingChange >= 0 ? '#4caf50' : '#f44336';
-                const changeSymbol = ratingChange >= 0 ? '+' : '';
-                
-                html += `
-                    <div style="background: var(--hover-color); border-radius: 8px; padding: 1rem; border-left: 4px solid var(--accent-color);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <span style="color: var(--secondary-color); font-weight: 600;">${contest.contestName}</span>
-                            <span style="color: ${changeColor}; font-weight: 600;">${changeSymbol}${ratingChange}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
-                            <span style="color: var(--text-color);">Rank: ${contest.rank}</span>
-                            <span style="color: var(--text-color);">${contest.oldRating} → ${contest.newRating}</span>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            container.innerHTML = html;
-        }
-        
-        function displayRecentContests(ratingHistory) {
-            const container = document.getElementById('cf-recent-contests');
-            if (!container) return;
-            
-            if (ratingHistory.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: var(--text-color); padding: 2rem;">No recent contests available</div>';
-                return;
-            }
-            
-            // Show upcoming contests (this would need a separate API call)
-            container.innerHTML = `
-                <h3 style="color: var(--heading-color); margin-bottom: 1rem;">Upcoming Contests</h3>
-                <div style="text-align: center; color: var(--text-color); padding: 2rem;">
-                    <p>Check <a href="/contests/upcoming" style="color: var(--accent-color);">upcoming contests</a> for the latest competition schedule.</p>
-                </div>
-            `;
-        }
-        
-        function showCFError(message) {
-            const results = document.getElementById('cf-dashboard-results');
-            if (!results) {
-                console.error('Results container not found');
-                return;
-            }
-            results.innerHTML = `<div style="background: #ff6b6b; color: white; padding: 1rem; border-radius: 8px; text-align: center; margin: 1rem 0;">${message}</div>`;
-            results.style.display = 'block';
-        }
-    </script>
-</body>
-</html>
+                 cfHandleInput.addEventListener('focus', () => showDropdown());
+                 cfHandleInput.addEventListener('input', () => showDropdown());
+             }
+             
+             document.addEventListener('click', function(e) {
+                 const inputContainer = document.querySelector('.input-container');
+                 if (inputContainer && !inputContainer.contains(e.target)) {
+                     hideDropdown();
+                 }
+             });
+
+             const clearBtn = document.getElementById('clear-history');
+             if (clearBtn) {
+                 clearBtn.addEventListener('click', (e) => {
+                     e.stopPropagation();
+                     const handleInput = document.getElementById('cf-handle');
+                     if (handleInput) {
+                         handleInput.value = '';
+                     }
+                 });
+             }
+
+             const clearAllBtn = document.getElementById('clear-all-history');
+             if (clearAllBtn) {
+                 clearAllBtn.addEventListener('click', (e) => {
+                     e.stopPropagation();
+                     clearUserHistory();
+                 });
+             }
+
+             updateHistoryDropdown();
+         });
+
+         // User History Management
+         const USER_HISTORY_KEY = 'cf_handle_history';
+         const MAX_HISTORY_ITEMS = 10;
+
+         function loadUserHistory() {
+             try {
+                 const history = localStorage.getItem(USER_HISTORY_KEY);
+                 return history ? JSON.parse(history) : [];
+             } catch (error) {
+                 console.error('Error loading user history:', error);
+                 return [];
+             }
+         }
+
+         function saveUserHistory(handle) {
+             if (!handle || handle.trim() === '') return;
+             
+             try {
+                 let history = loadUserHistory();
+                 const handleLower = handle.toLowerCase().trim();
+                 
+                 history = history.filter(item => item.toLowerCase() !== handleLower);
+                 history.unshift(handle.trim());
+                 
+                 const trimmedHistory = history.slice(0, MAX_HISTORY_ITEMS);
+                 
+                 localStorage.setItem(USER_HISTORY_KEY, JSON.stringify(trimmedHistory));
+                 updateHistoryDropdown();
+             } catch (error) {
+                 console.error('Error saving user history:', error);
+             }
+         }
+
+         function updateHistoryDropdown() {
+             const historyList = document.getElementById('history-list');
+             if (!historyList) return;
+
+             const history = loadUserHistory();
+             const filter = document.getElementById('cf-handle').value.toLowerCase();
+             historyList.innerHTML = '';
+             
+             const filteredHistory = history.filter(item => item.toLowerCase().includes(filter));
+
+             if (filteredHistory.length === 0) {
+                 historyList.innerHTML = '<div class="history-empty">No recent searches</div>';
+                 return;
+             }
+
+             filteredHistory.forEach((handle, index) => {
+                 const item = document.createElement('div');
+                 item.className = 'history-item';
+                 item.innerHTML = `
+                     <span class="history-username">${handle}</span>
+                     <button type="button" class="history-delete-btn" data-handle="${handle}" title="Remove from history">
+                         <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                         </svg>
+                     </button>
+                 `;
+                 
+                 item.addEventListener('click', (e) => {
+                     if (!e.target.closest('.history-delete-btn')) {
+                         document.getElementById('cf-handle').value = handle;
+                         hideDropdown();
+                         exploreCFUser();
+                     }
+                 });
+
+                 const deleteBtn = item.querySelector('.history-delete-btn');
+                 deleteBtn.addEventListener('click', (e) => {
+                     e.stopPropagation();
+                     const handleToRemove = e.currentTarget.getAttribute('data-handle');
+                     removeFromHistory(handleToRemove);
+                 });
+
+                 historyList.appendChild(item);
+             });
+         }
+
+         function showDropdown() {
+             const dropdown = document.getElementById('history-dropdown');
+             if (dropdown) {
+                 updateHistoryDropdown();
+                 dropdown.classList.add('active');
+             }
+         }
+
+         function hideDropdown() {
+             const dropdown = document.getElementById('history-dropdown');
+             if (dropdown) {
+                 dropdown.classList.remove('active');
+             }
+         }
+
+         function removeFromHistory(handleToRemove) {
+             try {
+                 let history = loadUserHistory();
+                 history = history.filter(item => item.toLowerCase() !== handleToRemove.toLowerCase());
+                 localStorage.setItem(USER_HISTORY_KEY, JSON.stringify(history));
+                 updateHistoryDropdown();
+             } catch (error) {
+                 console.error('Error removing from history:', error);
+             }
+         }
+
+         function clearUserHistory() {
+             try {
+                 localStorage.removeItem(USER_HISTORY_KEY);
+                 updateHistoryDropdown();
+                 hideDropdown();
+             } catch (error) {
+                 console.error('Error clearing user history:', error);
+             }
+         }
+
+         // Codeforces Dashboard Functionality
+         async function exploreCFUser() {
+             const handleInput = document.getElementById('cf-handle');
+             const results = document.getElementById('cf-dashboard-results');
+             const analyzeButton = document.querySelector('button[onclick="exploreCFUser()"]');
+             
+             if (!handleInput || !results) {
+                 console.error('Required DOM elements not found');
+                 return;
+             }
+             
+             const handle = handleInput.value.trim();
+             if (!handle) {
+                 alert('Please enter a Codeforces handle');
+                 return;
+             }
+             
+             // Show loading and disable button
+             results.style.display = 'none';
+             if (analyzeButton) {
+                 analyzeButton.disabled = true;
+                 analyzeButton.innerHTML = '<div class="spinner" style="margin: 0 auto; width: 1.5rem; height: 1.5rem; border-width: 3px;"></div>';
+             }
+             
+             try {
+                 // Fetch user data from the API
+                 const response = await fetch(`/${handle}`);
+                 const data = await response.json();
+                 
+                 if (response.ok) {
+                     saveUserHistory(handle);
+                     displayCFResults(handle, data);
+                 } else {
+                     showCFError(data.detail || 'Failed to fetch user data');
+                 }
+             } catch (error) {
+                 console.error('Error fetching data:', error);
+                 showCFError('Failed to fetch Codeforces data. Please check the handle and try again.');
+             } finally {
+                 // Hide loading and re-enable button
+                 if (analyzeButton) {
+                     analyzeButton.disabled = false;
+                     analyzeButton.innerHTML = `
+                         <svg class="icon" viewBox="0 0 24 24" fill="currentColor" style="width: 1.2rem; height: 1.2rem;"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                         Analyze
+                     `;
+                 }
+             }
+         }
+         
+         function displayCFResults(handle, data) {
+             const results = document.getElementById('cf-dashboard-results');
+             
+             // Update profile cards
+             const elements = {
+                 'cf-handle-value': document.getElementById('cf-handle-value'),
+                 'cf-rating': document.getElementById('cf-rating'),
+                 'cf-max-rating': document.getElementById('cf-max-rating'),
+                 'cf-contests': document.getElementById('cf-contests'),
+                 'cf-solved': document.getElementById('cf-solved')
+             };
+             
+             if (elements['cf-handle-value']) elements['cf-handle-value'].textContent = handle;
+             if (elements['cf-rating']) elements['cf-rating'].textContent = data.rating || 'N/A';
+             if (elements['cf-max-rating']) elements['cf-max-rating'].textContent = data.maxRating || 'N/A';
+             if (elements['cf-contests']) elements['cf-contests'].textContent = data.contests_count || 'N/A';
+             if (elements['cf-solved']) elements['cf-solved'].textContent = data.solved_problems_count || 'N/A';
+             
+             // Display rating history if available
+             displayRatingHistory(data.rating_history || []);
+             
+             // Display recent contests if available
+             displayRecentContests(data.rating_history || []);
+             
+             results.style.display = 'block';
+         }
+         
+         function displayRatingHistory(ratingHistory) {
+             const container = document.getElementById('cf-contest-history');
+             if (!container) return;
+             
+             if (ratingHistory.length === 0) {
+                 container.innerHTML = '<div style="text-align: center; color: var(--text-color); padding: 2rem;">No contest history available</div>';
+                 return;
+             }
+             
+             // Show last 10 contests
+             const recentContests = ratingHistory.slice(-10).reverse();
+             
+             let html = '<h3 style="color: var(--heading-color); margin-bottom: 1rem;">Recent Contest History</h3>';
+             html += '<div style="display: flex; flex-direction: column; gap: 1rem;">';
+             
+             recentContests.forEach(contest => {
+                 const ratingChange = contest.newRating - contest.oldRating;
+                 const changeColor = ratingChange >= 0 ? '#4caf50' : '#f44336';
+                 const changeSymbol = ratingChange >= 0 ? '+' : '';
+                 
+                 html += `
+                     <div style="background: var(--hover-color); border-radius: 8px; padding: 1rem; border-left: 4px solid var(--accent-color);">
+                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                             <span style="color: var(--secondary-color); font-weight: 600;">${contest.contestName}</span>
+                             <span style="color: ${changeColor}; font-weight: 600;">${changeSymbol}${ratingChange}</span>
+                         </div>
+                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                             <span style="color: var(--text-color);">Rank: ${contest.rank}</span>
+                             <span style="color: var(--text-color);">${contest.oldRating} → ${contest.newRating}</span>
+                         </div>
+                     </div>
+                 `;
+             });
+             
+             html += '</div>';
+             container.innerHTML = html;
+         }
+         
+         function displayRecentContests(ratingHistory) {
+             const container = document.getElementById('cf-recent-contests');
+             if (!container) return;
+             
+             if (ratingHistory.length === 0) {
+                 container.innerHTML = '<div style="text-align: center; color: var(--text-color); padding: 2rem;">No recent contests available</div>';
+                 return;
+             }
+             
+             // Show upcoming contests (this would need a separate API call)
+             container.innerHTML = `
+                 <h3 style="color: var(--heading-color); margin-bottom: 1rem;">Upcoming Contests</h3>
+                 <div style="text-align: center; color: var(--text-color); padding: 2rem;">
+                     <p>Check <a href="/contests/upcoming" style="color: var(--accent-color);">upcoming contests</a> for the latest competition schedule.</p>
+                 </div>
+             `;
+         }
+         
+         function showCFError(message) {
+             const results = document.getElementById('cf-dashboard-results');
+             if (!results) {
+                 console.error('Results container not found');
+                 return;
+             }
+             results.innerHTML = `<div style="background: #ff6b6b; color: white; padding: 1rem; border-radius: 8px; text-align: center; margin: 1rem 0;">${message}</div>`;
+             results.style.display = 'block';
+         }
+     </script>
+ </body>
+ </html>
 """
