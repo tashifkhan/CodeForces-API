@@ -21,6 +21,7 @@ Hosted at [codeforces-stats.tashif.codes](https://codeforces-stats.tashif.codes)
 - Retrieve user's rating, rank, and maximum achieved rating
 - Get detailed contest participation history
 - View solved problems count
+- Generate daily activity heatmaps from user submissions
 - Fetch multiple users' information simultaneously
 - Track upcoming contests
 - Find common contests between multiple users
@@ -220,6 +221,52 @@ Returns the user's handle and total problems solved.
 {
 	"handle": "tourist",
 	"count": 1500
+}
+```
+
+### Get User Activity Heatmap
+
+```
+GET /{userid}/heatmap?days=365
+```
+
+Retrieves daily submission activity for a CodeForces user, grouped by UTC date.
+
+#### Parameters
+
+- `userid` (path): CodeForces handle
+- `days` (query, optional): Number of trailing days to include in the heatmap. Default is `365`.
+
+#### Response
+
+Returns per-day submission counts, accepted counts, and summary streak metrics.
+
+#### Example Response
+
+```json
+{
+	"handle": "tourist",
+	"timezone": "UTC",
+	"days": 7,
+	"start_date": "2026-04-29",
+	"end_date": "2026-05-05",
+	"total_submissions": 8,
+	"total_accepted": 5,
+	"active_days": 2,
+	"current_streak": 0,
+	"longest_streak": 1,
+	"heatmap": [
+		{
+			"date": "2026-04-29",
+			"submissions": 0,
+			"accepted": 0
+		},
+		{
+			"date": "2026-04-30",
+			"submissions": 3,
+			"accepted": 2
+		}
+	]
 }
 ```
 

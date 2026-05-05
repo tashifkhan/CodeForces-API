@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, Path
+from fastapi import APIRouter, HTTPException, Path, Query
 from typing import List, Dict, Any
-from models.base import UserAllStats, UserInfo, RatingHistory, SolvedProblemsCount, ErrorResponse
+from models.base import UserAllStats, UserInfo, RatingHistory, SolvedProblemsCount, ErrorResponse, UserActivityHeatmap
 from services.codeforces_service import (
     get_user_all_stats, get_user_info, get_user_rating,
     get_solved_problem_count, get_contests_participated_by_user,
-    get_common_contests
+    get_common_contests, get_user_activity_heatmap
 )
 
 router = APIRouter()
@@ -61,6 +61,19 @@ async def solved_problems(userid: str = Path(..., description="Codeforces handle
     if solved_count is None:
         raise HTTPException(status_code=404, detail=f"Solved problem count not found for {userid}")
     return {"handle": userid, "count": solved_count}
+
+
+
+@router.get("/{userid}/heatmap", response_model=UserActivityHeatmap, responses={404: {"model": ErrorResponse}})
+async def user_activity_heatmap(
+    userid: str = Path(..., description="Codeforces handle"),
+    days: int = Query(365, ge=1, le=3650, description="Number of trailing days to include"),
+):
+    """Get daily submission activity for a Codeforces user."""
+    heatmap = await get_user_activity_heatmap(userid, days)
+    if heatmap is None:
+        raise HTTPException(status_code=404, detail=f"Heatmap data not found for {userid}")
+    return heatmap
 
 
 
