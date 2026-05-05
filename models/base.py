@@ -41,6 +41,28 @@ class SolvedProblemsCount(BaseModel):
     handle: str
     count: int
 
+
+class HeatmapDay(BaseModel):
+    """Model for one day of user activity."""
+    date: str
+    submissions: int
+    accepted: int
+
+
+class UserActivityHeatmap(BaseModel):
+    """Model for daily activity heatmap data."""
+    handle: str
+    timezone: str = Field("UTC", description="Timezone used for daily buckets")
+    days: int = Field(..., description="Number of days included in the heatmap")
+    start_date: str
+    end_date: str
+    total_submissions: int
+    total_accepted: int
+    active_days: int
+    current_streak: int
+    longest_streak: int
+    heatmap: List[HeatmapDay]
+
 class Contest(BaseModel):
     """Model for a contest."""
     id: int

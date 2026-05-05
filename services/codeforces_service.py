@@ -1,8 +1,10 @@
 import aiohttp
 import time
 import asyncio
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from typing import List, Set, Optional
-from models.base import UserAllStats, RatingHistory
+from models.base import UserAllStats, RatingHistory, UserActivityHeatmap, HeatmapDay
 
 
 
@@ -47,6 +49,87 @@ async def get_solved_problem_count(handle: str) -> Optional[int]:
                     return len(solved_problems)
                 return None
         except aiohttp.ClientError:
+            return None
+
+
+async def get_user_activity_heatmap(handle: str, days: int = 365) -> Optional[UserActivityHeatmap]:
+    """Builds daily submission activity for a user's heatmap."""
+    url = f"https://codeforces.com/api/user.status?handle={handle}"
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url) as response:
+                data = await response.json()
+                if data["status"] != "OK":
+                    return None
+
+                end_date = datetime.now(timezone.utc).date()
+                start_date = end_date - timedelta(days=days - 1)
+                activity_by_day = defaultdict(lambda: {"submissions": 0, "accepted": 0})
+
+                for submission in data["result"]:
+                    created_at = datetime.fromtimestamp(
+                        submission["creationTimeSeconds"],
+                        tz=timezone.utc,
+                    ).date()
+
+                    if created_at < start_date or created_at > end_date:
+                        continue
+
+                    day_key = created_at.isoformat()
+                    activity_by_day[day_key]["submissions"] += 1
+                    if submission.get("verdict") == "OK":
+                        activity_by_day[day_key]["accepted"] += 1
+
+                heatmap = []
+                current_streak = 0
+                longest_streak = 0
+                running_streak = 0
+                total_submissions = 0
+                total_accepted = 0
+                active_days = 0
+
+                for day_offset in range(days):
+                    current_date = start_date + timedelta(days=day_offset)
+                    day_key = current_date.isoformat()
+                    day_activity = activity_by_day[day_key]
+                    submissions = day_activity["submissions"]
+                    accepted = day_activity["accepted"]
+
+                    if submissions > 0:
+                        active_days += 1
+                        running_streak += 1
+                        longest_streak = max(longest_streak, running_streak)
+                    else:
+                        running_streak = 0
+
+                    total_submissions += submissions
+                    total_accepted += accepted
+                    heatmap.append(
+                        HeatmapDay(
+                            date=day_key,
+                            submissions=submissions,
+                            accepted=accepted,
+                        )
+                    )
+
+                for day in reversed(heatmap):
+                    if day.submissions == 0:
+                        break
+                    current_streak += 1
+
+                return UserActivityHeatmap(
+                    handle=handle,
+                    days=days,
+                    start_date=start_date.isoformat(),
+                    end_date=end_date.isoformat(),
+                    total_submissions=total_submissions,
+                    total_accepted=total_accepted,
+                    active_days=active_days,
+                    current_streak=current_streak,
+                    longest_streak=longest_streak,
+                    heatmap=heatmap,
+                )
+        except (aiohttp.ClientError, KeyError, TypeError, ValueError):
             return None
 
 
