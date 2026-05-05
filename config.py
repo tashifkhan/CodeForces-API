@@ -9,6 +9,12 @@ class Config:
     DESCRIPTION = "A FastAPI app for the Codeforces Stats"
     VERSION = "1.0.0"
 
+    # CORS settings
+    CORS_ALLOW_ORIGINS = ["*"]
+    CORS_ALLOW_CREDENTIALS = True
+    CORS_ALLOW_METHODS = ["*"]
+    CORS_ALLOW_HEADERS = ["*"]
+
     # Environment settings
     ENV = "production"  # or "development"
     
