@@ -68,9 +68,10 @@ async def solved_problems(userid: str = Path(..., description="Codeforces handle
 async def user_activity_heatmap(
     userid: str = Path(..., description="Codeforces handle"),
     days: int = Query(365, ge=1, le=3650, description="Number of trailing days to include"),
+    year: int | None = Query(None, description="Full calendar year to include, for example 2026"),
 ):
     """Get daily submission activity for a Codeforces user."""
-    heatmap = await get_user_activity_heatmap(userid, days)
+    heatmap = await get_user_activity_heatmap(userid, days, year)
     if heatmap is None:
         raise HTTPException(status_code=404, detail=f"Heatmap data not found for {userid}")
     return heatmap

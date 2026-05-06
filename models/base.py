@@ -52,10 +52,13 @@ class HeatmapDay(BaseModel):
 class UserActivityHeatmap(BaseModel):
     """Model for daily activity heatmap data."""
     handle: str
+    mode: str = Field(..., description="Heatmap range mode: trailing_days or calendar_year")
     timezone: str = Field("UTC", description="Timezone used for daily buckets")
     days: int = Field(..., description="Number of days included in the heatmap")
+    year: Optional[int] = None
     start_date: str
     end_date: str
+    available_years: List[int]
     total_submissions: int
     total_accepted: int
     active_days: int

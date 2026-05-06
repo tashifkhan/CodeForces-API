@@ -228,14 +228,16 @@ Returns the user's handle and total problems solved.
 
 ```
 GET /{userid}/heatmap?days=365
+GET /{userid}/heatmap?year=2026
 ```
 
-Retrieves daily submission activity for a CodeForces user, grouped by UTC date.
+Retrieves daily submission activity for a CodeForces user, grouped by UTC date. The endpoint supports either a trailing range like the last `365` days or a full calendar year like `2026`, `2025`, and so on back to the account creation year.
 
 #### Parameters
 
 - `userid` (path): CodeForces handle
 - `days` (query, optional): Number of trailing days to include in the heatmap. Default is `365`.
+- `year` (query, optional): Full calendar year to include. If provided, the endpoint returns that year clipped to the account creation date and today when applicable.
 
 #### Response
 
@@ -246,10 +248,13 @@ Returns per-day submission counts, accepted counts, and summary streak metrics.
 ```json
 {
 	"handle": "tourist",
+	"mode": "trailing_days",
 	"timezone": "UTC",
 	"days": 7,
+	"year": null,
 	"start_date": "2026-04-29",
 	"end_date": "2026-05-05",
+	"available_years": [2026, 2025, 2024],
 	"total_submissions": 8,
 	"total_accepted": 5,
 	"active_days": 2,
@@ -267,6 +272,27 @@ Returns per-day submission counts, accepted counts, and summary streak metrics.
 			"accepted": 2
 		}
 	]
+}
+```
+
+#### Year Example
+
+```json
+{
+	"handle": "tourist",
+	"mode": "calendar_year",
+	"timezone": "UTC",
+	"days": 365,
+	"year": 2025,
+	"start_date": "2025-01-01",
+	"end_date": "2025-12-31",
+	"available_years": [2026, 2025, 2024],
+	"total_submissions": 120,
+	"total_accepted": 75,
+	"active_days": 28,
+	"current_streak": 0,
+	"longest_streak": 4,
+	"heatmap": []
 }
 ```
 
