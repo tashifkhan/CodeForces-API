@@ -1,12 +1,14 @@
-import aiohttp
-import time
 import asyncio
+import time
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
-from typing import List, Set, Optional
-from models.base import UserAllStats, RatingHistory, UserActivityHeatmap, HeatmapDay
+from typing import List, Optional, Set
 
+import aiohttp
 
+from models.heatmap import HeatmapDay, UserActivityHeatmap
+from models.rating import RatingHistory
+from models.users import UserAllStats
 
 async def get_user_info(handles: List[str]):
     """Fetches information about Codeforces users."""
@@ -21,8 +23,6 @@ async def get_user_info(handles: List[str]):
         except aiohttp.ClientError:
             return None
 
-
-
 async def get_user_rating(handle: str) -> Optional[List[RatingHistory]]:
     """Fetches the rating history of a Codeforces user."""
     url = f"https://codeforces.com/api/user.rating?handle={handle}"
@@ -33,8 +33,6 @@ async def get_user_rating(handle: str) -> Optional[List[RatingHistory]]:
                 return data["result"] if data["status"] == "OK" else None
         except aiohttp.ClientError:
             return None
-
-
 
 async def get_solved_problem_count(handle: str) -> Optional[int]:
     """Calculates the number of solved problems for a Codeforces user."""
@@ -50,7 +48,6 @@ async def get_solved_problem_count(handle: str) -> Optional[int]:
                 return None
         except aiohttp.ClientError:
             return None
-
 
 async def get_solved_tags(handle: str) -> List[dict]:
     """Aggregates problem tags across distinct solved problems (topic analysis).
@@ -85,7 +82,6 @@ async def get_solved_tags(handle: str) -> List[dict]:
         {"topic": topic, "count": count}
         for topic, count in sorted(tag_counts.items(), key=lambda kv: kv[1], reverse=True)
     ]
-
 
 def _build_heatmap_response(
     handle: str,
@@ -167,7 +163,6 @@ def _build_heatmap_response(
         heatmap=heatmap,
     )
 
-
 async def get_user_activity_heatmap(
     handle: str,
     days: int = 365,
@@ -223,8 +218,6 @@ async def get_user_activity_heatmap(
         except (aiohttp.ClientError, KeyError, TypeError, ValueError):
             return None
 
-
-
 async def get_upcoming_contests(gym: bool = False):
     """Fetches a list of upcoming contests."""
     url = f"https://codeforces.com/api/contest.list?gym={str(gym).lower()}"
@@ -240,8 +233,6 @@ async def get_upcoming_contests(gym: bool = False):
         except aiohttp.ClientError:
             return None
 
-
-
 async def get_contests_participated_by_user(handle: str) -> Set[int]:
     """Gets contests participated in by a user."""
     await asyncio.sleep(2)  # Rate limit
@@ -256,8 +247,6 @@ async def get_contests_participated_by_user(handle: str) -> Set[int]:
         except aiohttp.ClientError:
             return set()
 
-
-
 async def get_common_contests(handles: List[str]) -> Set[int]:
     """Gets common contests for multiple users."""
     if not handles:
@@ -271,8 +260,6 @@ async def get_common_contests(handles: List[str]) -> Set[int]:
         all_contests.append(contests)
 
     return all_contests[0].intersection(*all_contests[1:])
-
-
 
 async def get_user_all_stats(handle: str) -> Optional[UserAllStats]:
     """Gets comprehensive statistics for a user."""
