@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 import uvicorn
-from routes import user_routes, contest_routes
+from routes import user_routes, contest_routes, unified_routes
 from models.templates import html_template
 from config import Config
 
@@ -20,6 +20,7 @@ app.add_middleware(
     allow_headers=Config.CORS_ALLOW_HEADERS,
 )
 
+app.include_router(unified_routes.router)
 app.include_router(user_routes.router)
 app.include_router(contest_routes.router)
 
