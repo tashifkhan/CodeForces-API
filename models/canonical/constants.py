@@ -1,0 +1,2 @@
+PLATFORM = "codeforces"
+CATEGORY = "competitive"
