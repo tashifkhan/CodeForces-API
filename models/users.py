@@ -26,6 +26,6 @@ class UserAllStats(UserInfo):
 
     contests_count: int = Field(0, description="Number of contests participated in")
     solved_problems_count: int = Field(0, description="Number of problems solved")
-    rating_history: list[list[RatingHistory]] | None = Field(
+    rating_history: list[RatingHistory] | None = Field(
         None, description="History of rating changes"
     )
