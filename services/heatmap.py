@@ -4,22 +4,13 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional, Set
 
-import aiohttp
 
 from models.heatmap import HeatmapDay, UserActivityHeatmap
 
-async def get_user_info(handles: List[str]):
-    """Fetches information about Codeforces users."""
-    url = f"https://codeforces.com/api/user.info?handles={';'.join(handles)}"
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(url) as response:
-                data = await response.json()
-                if data["status"] == "OK":
-                    return data["result"]
-                return None
-        except aiohttp.ClientError:
-            return None
+from services.client import api
+
+async def get_user_info(handles):
+    return await api('user.info', handles=';'.join(handles))
 
 def _build_heatmap_response(
     handle: str,
@@ -144,22 +135,5 @@ async def get_user_activity_heatmap(
             start_date = registration_date
         mode = "trailing_days"
 
-    url = f"https://codeforces.com/api/user.status?handle={handle}"
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(url) as response:
-                data = await response.json()
-                if data["status"] != "OK":
-                    return None
-
-                return _build_heatmap_response(
-                    handle=handle,
-                    submissions=data["result"],
-                    start_date=start_date,
-                    end_date=end_date,
-                    mode=mode,
-                    available_years=available_years,
-                    year=year,
-                )
-        except (aiohttp.ClientError, KeyError, TypeError, ValueError):
-            return None
+    submissions = await api('user.status', handle=handle)
+    return _build_heatmap_response(handle, submissions, start_date, end_date, mode, available_years, year)

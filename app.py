@@ -1,3 +1,4 @@
+from core.runtime import RequestBudgetMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -11,6 +12,9 @@ app = FastAPI(
     version=Config.VERSION,
 )
 
+# Last added runs first. CORS stays outermost so 504s and cache hits carry it.
+app.add_middleware(CacheRateLimitMiddleware, platform="codeforces")
+app.add_middleware(RequestBudgetMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=Config.CORS_ALLOW_ORIGINS,
@@ -18,7 +22,6 @@ app.add_middleware(
     allow_methods=Config.CORS_ALLOW_METHODS,
     allow_headers=Config.CORS_ALLOW_HEADERS,
 )
-app.add_middleware(CacheRateLimitMiddleware, platform="codeforces")
 
 app.include_router(docs.router)
 app.include_router(profile.router)

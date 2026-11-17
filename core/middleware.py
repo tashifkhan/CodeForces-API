@@ -1,3 +1,4 @@
+from core.runtime import state
 import hashlib
 import re
 import json
@@ -13,6 +14,7 @@ from core.rate_limit import RateLimitResult, check_rate_limit
 
 
 SKIP_PATHS = {"/", "/docs", "/redoc", "/openapi.json", "/favicon.ico"}
+RESERVED_SEGMENTS = {"multi", "users", "contests"}
 INVALID_USER_MARKERS = ("user does not exist", "user not found", "not found on", "invalid username")
 
 
@@ -27,7 +29,7 @@ def _client_ip(request: Request) -> str:
 
 
 def _handle_from_path(path: str) -> str | None:
-    if path in SKIP_PATHS or path.startswith("/docs/") or path.startswith("/redoc/"):
+    if path in SKIP_PATHS or path.startswith(("/docs/", "/redoc/", "/internal/")):
         return None
     segment = path.strip("/").split("/", 1)[0].strip()
     if not segment or "." in segment:
@@ -43,7 +45,7 @@ def _query_string(request: Request) -> str:
 def _cache_key(platform: str, request: Request) -> str:
     raw = f"{request.method}:{request.url.path}:{_query_string(request)}"
     digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
-    return f"cache:{platform}:{digest}"
+    return f"cache:v3:{platform}:{digest}"
 
 
 def _is_invalid_user(status_code: int, body: bytes) -> bool:
@@ -52,6 +54,9 @@ def _is_invalid_user(status_code: int, body: bytes) -> bool:
     try:
         payload = json.loads(body.decode("utf-8"))
     except (UnicodeDecodeError, ValueError):
+        return False
+
+    if not isinstance(payload, dict):
         return False
 
     message = str(payload.get("message") or payload.get("detail") or "").lower()
@@ -115,7 +120,7 @@ class CacheRateLimitMiddleware(BaseHTTPMiddleware):
             )
 
         invalid_key = f"invalid:{self.platform}:{handle}"
-        invalid_cached = await get_json(invalid_key)
+        invalid_cached = await get_json(invalid_key) if handle not in RESERVED_SEGMENTS else None
         if invalid_cached is not None:
             limited = await self._check_invalid_limits(request, handle)
             if not limited.allowed:
@@ -139,17 +144,41 @@ class CacheRateLimitMiddleware(BaseHTTPMiddleware):
         headers.pop("content-length", None)
         headers["X-Cache"] = "MISS"
 
-        invalid_user = _is_invalid_user(response.status_code, body)
+        current = state.get()
+        if current and current.meta:
+            headers["Cache-Control"] = "no-store"
+            try:
+                payload = json.loads(body)
+                if isinstance(payload, dict):
+                    payload.setdefault("meta", {}).update(current.meta)
+                    body = json.dumps(payload, separators=(",", ":")).encode()
+            except (ValueError, TypeError):
+                pass
+        # An upstream error envelope is not a cacheable success.
+        app_status = response.status_code
+        try:
+            payload = json.loads(body)
+            if app_status == 200 and isinstance(payload, dict) and payload.get("status") == "error":
+                app_status = 404 if _is_invalid_user(200, body) else 502
+                headers["Cache-Control"] = "no-store"
+        except (ValueError, TypeError):
+            pass
+        # /multi, /users and /contests are not handles; a 404 there must not
+        # mark every request under that prefix as an unknown user.
+        invalid_user = handle not in RESERVED_SEGMENTS and _is_invalid_user(app_status, body)
         if invalid_user:
             await set_json(invalid_key, {"invalid": True}, settings.invalid_user_cache_ttl_seconds)
-        elif response.status_code == 200:
+        elif app_status == 200 and not any(
+            directive.strip().lower() in {"no-store", "no-cache", "private"}
+            for directive in headers.get("cache-control", headers.get("Cache-Control", "")).split(",")
+        ):
             headers.setdefault("Cache-Control", f"public, max-age={settings.cache_ttl_seconds}")
             ttl = _ttl_from_cache_control(headers, settings.cache_ttl_seconds)
             await set_json(key, self._cached_response(response, body), ttl)
 
         return Response(
             content=body,
-            status_code=response.status_code,
+            status_code=app_status,
             headers=headers,
             media_type=response.media_type,
             background=response.background,
