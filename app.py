@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from routes import badges, contests, docs, heatmap, legacy, profile, rating, stats, summary, topics
 from config import Config
+from core.analytics import AnalyticsMiddleware
 from core.middleware import CacheRateLimitMiddleware
 
 app = FastAPI(
@@ -15,6 +16,8 @@ app = FastAPI(
 # Last added runs first. CORS stays outermost so 504s and cache hits carry it.
 app.add_middleware(CacheRateLimitMiddleware, platform="codeforces")
 app.add_middleware(RequestBudgetMiddleware)
+# Outside the cache so cache hits and 429s are counted; inside CORS.
+app.add_middleware(AnalyticsMiddleware, api="codeforces")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=Config.CORS_ALLOW_ORIGINS,
