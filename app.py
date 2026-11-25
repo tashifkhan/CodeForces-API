@@ -17,7 +17,7 @@ app = FastAPI(
 app.add_middleware(CacheRateLimitMiddleware, platform="codeforces")
 app.add_middleware(RequestBudgetMiddleware)
 # Outside the cache so cache hits and 429s are counted; inside CORS.
-app.add_middleware(AnalyticsMiddleware, api="codeforces")
+app.add_middleware(AnalyticsMiddleware, api="codeforces", wait=True)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=Config.CORS_ALLOW_ORIGINS,
